@@ -344,7 +344,7 @@ export default function PreambleAnalyzer() {
     const activeIndex = isManualMode ? manualIndex : currentIndex;
 
         return (
-            <div className="patriotic-card">
+            <div className="content-wrapper">
               <div className="patriotic-header">
                 <h1 className="patriotic-title">
                   🇺🇸 Preamble Word Analyzer 🇺🇸
@@ -352,15 +352,8 @@ export default function PreambleAnalyzer() {
                 <p className="patriotic-subtitle">Analyzing Our Nation's Founding Words</p>
               </div>
         
-              {/* <p className="patriotic-description">
-                This tool goes through the Preamble one word at a time and counts how
-                many words <span className="font-semibold">start with &quot;t&quot;</span>,{" "}
-                <span className="font-semibold">end with &quot;e&quot;</span>, and{" "}
-                <span className="font-semibold">do both</span>.
-              </p> */}
-        
               {/* Preamble text with animated highlight */}
-              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 px-5 py-4 leading-10 text-slate-800 text-xl">
+              <div className="preamble-large">
                 {words.map((word, i) => {
                   // Check if word has been passed (index < activeIndex)
                   const hasBeenPassed = i < activeIndex;
@@ -415,10 +408,10 @@ export default function PreambleAnalyzer() {
               <div className="button-container">
                 <button
                   onClick={handleStartWithVideo}
-                  disabled={!ready || (loopRunning && !isManualMode)}
+                  disabled={!ready || loopRunning}
                   className="patriotic-button patriotic-button-secondary"
                 >
-                  {!ready ? "Loading YouTube Player..." : (loopRunning ? "Syncing with Video..." : "Play Song & Sync")}
+                  {!ready ? "Loading YouTube Player..." : (loopRunning ? "Playing..." : "Play Song & Sync")}
               </button>
               </div>
               {loopRunning && !isManualMode && (
@@ -428,21 +421,21 @@ export default function PreambleAnalyzer() {
               )}
         
               {/* Stats row */}
-              <div className="mt-6 grid gap-4 md:grid-cols-3" style={{ padding: '0 30px 30px 30px' }}>
+              <div className="stats-large grid gap-6 md:grid-cols-3">
                 <StatCard
                   label='Starts with "t"'
                   value={startsWithT}
-                  accent="from-sky-500 to-sky-600"
+                  accent="green"
                 />
                 <StatCard
                   label='Ends with "e"'
                   value={endsWithE}
-                  accent="from-emerald-500 to-emerald-600"
+                  accent="red"
                 />
                 <StatCard
                   label='Starts with "t" & ends with "e"'
                   value={doesBoth}
-                  accent="from-amber-500 to-amber-600"
+                  accent="blue"
                 />
               </div>
             </div>
@@ -451,22 +444,41 @@ export default function PreambleAnalyzer() {
         
         // StatCard component
         function StatCard({ label, value, accent }) {
+          // Map accent to border and background colors - patriotic colors
+          const colorClasses = {
+            green: {
+              border: 'border-green-600',
+              bg: 'bg-green-600',
+              text: 'text-white'
+            },
+            red: {
+              border: 'border-patriotic-red',
+              bg: 'bg-patriotic-red',
+              text: 'text-white'
+            },
+            blue: {
+              border: 'border-patriotic-blue',
+              bg: 'bg-patriotic-blue',
+              text: 'text-white'
+            }
+          };
+          
+          const colors = colorClasses[accent] || colorClasses.green;
+          
           return (
-            <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
-              {/* colored top border / accent */}
-              <div className={`h-1 w-full bg-gradient-to-r ${accent}`} />
-              <div className="px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div className={`stat-card-large relative overflow-hidden rounded-xl border-3 ${colors.border} ${colors.bg} shadow-xl`}>
+              <div className="px-5 py-4">
+                <p className={`text-xs font-bold uppercase tracking-wide ${colors.text} mb-1 opacity-90`}>
                   {label}
                 </p>
-                <div className="mt-1 flex items-end justify-between">
-              <span
+                <div className="flex items-end justify-between">
+                  <span
                     key={value} // forces re-mount so animation restarts
-                    className="text-3xl font-extrabold text-slate-900 animate-[pulse_0.25s_ease-out]"
-              >
-                {value}
-              </span>
-                  <span className="text-xs text-slate-400">
+                    className={`text-4xl font-black ${colors.text} animate-[pulse_0.25s_ease-out] drop-shadow-lg`}
+                  >
+                    {value}
+                  </span>
+                  <span className={`text-xs ${colors.text} opacity-80 ml-2 font-semibold`}>
                     words
                   </span>
                 </div>
