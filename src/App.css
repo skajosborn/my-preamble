@@ -97,7 +97,7 @@
   margin-bottom: 10px;
   letter-spacing: 1px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-  font-family: 'Georgia', 'Times New Roman', serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .patriotic-subtitle {
@@ -226,7 +226,7 @@
   color: #2c3e50;
   background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
   text-align: justify;
-  font-family: 'Georgia', 'Times New Roman', serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .word {
