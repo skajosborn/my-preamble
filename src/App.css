@@ -1,0 +1,592 @@
+/* Patriotic American Theme */
+
+.patriotic-background {
+  background: linear-gradient(180deg, #002868 0%, #002868 38.46%, #ffffff 38.46%, #ffffff 61.54%, #bf0a30 61.54%, #bf0a30 100%);
+  background-image: 
+    repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent 7.69%,
+      rgba(191, 10, 48, 0.1) 7.69%,
+      rgba(191, 10, 48, 0.1) 15.38%
+    );
+  position: relative;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Blue field with stars */
+.stars-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 38.46%;
+  background: #002868;
+  background-image: 
+    radial-gradient(circle at 10px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 30px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 50px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 70px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 90px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 110px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 130px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 150px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 170px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 190px 10px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 20px 20px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 40px 20px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 60px 20px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 80px 20px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 100px 20px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 120px 20px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 140px 20px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 160px 20px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 180px 20px, white 1.5px, transparent 1.5px),
+    radial-gradient(circle at 200px 20px, white 1.5px, transparent 1.5px);
+  background-size: 200px 40px;
+  background-repeat: repeat;
+  opacity: 0.9;
+}
+
+.container-wrapper {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+/* Patriotic Card */
+.patriotic-card {
+  max-width: 900px;
+  width: 100%;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  animation: fadeIn 0.8s ease-in;
+  border: 4px solid #002868;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header */
+.patriotic-header {
+  background: linear-gradient(135deg, #002868 0%, #1a4480 100%);
+  color: white;
+  padding: 30px;
+  text-align: center;
+  border-bottom: 4px solid #bf0a30;
+}
+
+.patriotic-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+.patriotic-subtitle {
+  font-size: 1rem;
+  opacity: 0.95;
+  font-style: italic;
+  color: #ffd700;
+}
+
+.patriotic-description {
+  padding: 25px 30px;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  background: #f8f9fa;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.patriotic-description span {
+  color: #002868;
+  font-weight: 600;
+}
+
+/* Video Container */
+.video-container {
+  padding: 25px 30px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-top: 2px solid #e0e0e0;
+  border-bottom: 2px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.youtube-iframe {
+  width: 100%;
+  max-width: 560px;
+  height: 315px;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border: 3px solid #002868;
+  background: #000;
+  overflow: hidden;
+}
+
+/* Style the YouTube iframe that gets injected */
+.youtube-iframe iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 12px;
+}
+
+.video-credit {
+  font-size: 0.75rem;
+  color: #666;
+  text-align: center;
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* Button Container */
+.button-container {
+  display: flex;
+  gap: 15px;
+  padding: 25px 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+/* Button */
+.patriotic-button {
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #bf0a30 0%, #e63946 100%);
+  border: 3px solid #002868;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  flex: 1;
+  min-width: 200px;
+}
+
+.patriotic-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e63946 0%, #bf0a30 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.patriotic-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.patriotic-button-secondary {
+  background: linear-gradient(135deg, #002868 0%, #1a4480 100%);
+  border: 3px solid #bf0a30;
+}
+
+.patriotic-button-secondary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1a4480 0%, #002868 100%);
+}
+
+.sync-instruction {
+  text-align: center;
+  padding: 15px 30px;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  color: #856404;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-top: 2px solid #ffd700;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Preamble Display */
+.preamble-display {
+  padding: 30px;
+  line-height: 2;
+  font-size: 1.2rem;
+  color: #2c3e50;
+  background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+  text-align: justify;
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+.word {
+  transition: all 0.2s ease;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.word.highlighted {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  color: #002868;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: pulse 0.4s ease;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Stats Grid - Tailwind-like utility classes */
+.mt-6 {
+  margin-top: 1.5rem;
+}
+
+.grid {
+  display: grid;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Utility classes for StatCard and preamble display */
+.relative {
+  position: relative;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+
+.border {
+  border-width: 1px;
+}
+
+.border-slate-200 {
+  border-color: #e2e8f0;
+}
+
+.bg-white {
+  background-color: #ffffff;
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.h-1 {
+  height: 0.25rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.bg-gradient-to-r {
+  background-image: linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to));
+}
+
+.from-sky-500 {
+  --tw-gradient-from: #0ea5e9;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(14, 165, 233, 0));
+}
+
+.to-sky-600 {
+  --tw-gradient-to: #0284c7;
+}
+
+.from-emerald-500 {
+  --tw-gradient-from: #10b981;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(16, 185, 129, 0));
+}
+
+.to-emerald-600 {
+  --tw-gradient-to: #059669;
+}
+
+.from-amber-500 {
+  --tw-gradient-from: #f59e0b;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(245, 158, 11, 0));
+}
+
+.to-amber-600 {
+  --tw-gradient-to: #d97706;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+.tracking-wide {
+  letter-spacing: 0.025em;
+}
+
+.text-slate-500 {
+  color: #64748b;
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.font-extrabold {
+  font-weight: 800;
+}
+
+.text-slate-900 {
+  color: #0f172a;
+}
+
+.animate-\[pulse_0\.25s_ease-out\] {
+  animation: pulse 0.25s ease-out;
+}
+
+.text-slate-400 {
+  color: #94a3b8;
+}
+
+.bg-slate-50\/70 {
+  background-color: rgba(248, 250, 252, 0.7);
+}
+
+.px-5 {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.leading-8 {
+  line-height: 2rem;
+}
+
+.leading-10 {
+  line-height: 2.5rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-slate-800 {
+  color: #1e293b;
+}
+
+.px-0\.5 {
+  padding-left: 0.125rem;
+  padding-right: 0.125rem;
+}
+
+.rounded-sm {
+  border-radius: 0.125rem;
+}
+
+.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.duration-150 {
+  transition-duration: 150ms;
+}
+
+.bg-yellow-200 {
+  background-color: #fef08a;
+}
+
+.shadow-\[0_0_0_1px_rgba\(0\,0\,0\,0\.08\)\] {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+/* Color classes for word highlighting */
+.text-green-600 {
+  color: #16a34a;
+}
+
+.text-red-600 {
+  color: #dc2626;
+}
+
+.text-blue-600 {
+  color: #2563eb;
+}
+
+@keyframes countPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stars-overlay {
+    width: 35%;
+    background-size: 150px 30px;
+  }
+  
+  .patriotic-title {
+    font-size: 1.8rem;
+  }
+  
+  .patriotic-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .preamble-display {
+    font-size: 1rem;
+    padding: 20px;
+  }
+  
+  /* Stats grid responsive */
+  .md\:grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .mt-6 {
+    margin-top: 1rem;
+  }
+  
+  .gap-4 {
+    gap: 0.75rem;
+  }
+  
+  .stat-card {
+    padding: 0.875rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .video-container {
+    padding: 20px;
+  }
+  
+  .youtube-iframe {
+    height: 280px;
+  }
+  
+  .button-container {
+    padding: 20px;
+  }
+  
+  .container-wrapper {
+    padding: 20px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stars-overlay {
+    width: 30%;
+  }
+  
+  .patriotic-title {
+    font-size: 1.4rem;
+  }
+  
+  .preamble-display {
+    font-size: 0.95rem;
+    padding: 15px;
+  }
+  
+  .video-container {
+    padding: 20px 15px;
+  }
+  
+  .youtube-iframe {
+    height: 250px;
+  }
+  
+  .button-container {
+    padding: 20px 15px;
+    gap: 10px;
+  }
+  
+  .patriotic-button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    min-width: 150px;
+  }
+  
+  .sync-instruction {
+    padding: 12px 15px;
+    font-size: 0.85rem;
+  }
+  
+  .container-wrapper {
+    padding: 15px 10px;
+  }
+}
