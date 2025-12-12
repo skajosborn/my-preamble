@@ -585,9 +585,9 @@ export default function PreambleAnalyzer() {
       {/* This section has the original code to solve the coding task. */}
       <div style={{
         width: '100%',
-        maxWidth: '64rem',
+        maxWidth: '48rem',
         marginTop: '2rem',
-        padding: '2rem',
+        padding: '1.5rem',
         borderRadius: '1.5rem',
         background: 'rgba(24, 25, 33, 0.8)',
         border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -597,22 +597,22 @@ export default function PreambleAnalyzer() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '1rem'
+          gap: '0.75rem'
         }}>
           <div style={{
             textAlign: 'center',
-            marginBottom: '0.5rem'
+            marginBottom: '0.25rem'
           }}>
             <h2 style={{
-              fontSize: '1.5rem',
+              fontSize: '1.25rem',
               fontWeight: 'bold',
               color: '#2563eb',
-              marginBottom: '0.5rem'
+              marginBottom: '0.25rem'
             }}>
               My Code
             </h2>
             <p style={{
-              fontSize: '0.875rem',
+              fontSize: '0.75rem',
               color: '#94a3b8',
               padding: '0 1rem'
             }}>
@@ -624,6 +624,7 @@ export default function PreambleAnalyzer() {
             alt="Code 1"
             style={{
               maxWidth: '100%',
+              width: '100%',
               height: 'auto',
               borderRadius: '0.5rem'
             }}
@@ -633,6 +634,7 @@ export default function PreambleAnalyzer() {
             alt="Code 2"
             style={{
               maxWidth: '100%',
+              width: '100%',
               height: 'auto',
               borderRadius: '0.5rem'
             }}
