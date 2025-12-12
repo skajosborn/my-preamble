@@ -1,509 +1,507 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 
+const PREAMBLE =
+  'We the People, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.';
 
-const Preamble =  "We the People, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.";
-
-const words = Preamble.split(' ');
+const words = PREAMBLE.split(" ");
 
 export default function PreambleAnalyzer() {
-    const playerRef = useRef(null);
-    const containerRef = useRef(null);
+  const playerRef = useRef(null);
+  const containerRef = useRef(null);
 
-    const [ready, setReady] = useState(false);
-    const [duration, setDuration] = useState(null);
-    const [currentIndex, setCurrentIndex] = useState(-1);
-    const [startsWithT, setStartsWithT] = useState(0);
-    const [endsWithE, setEndsWithE] = useState(0);
-    const [doesBoth, setDoesBoth] = useState(0);
-    const [loopRunning, setLoopRunning] = useState(false);
-    const [isManualMode, setIsManualMode] = useState(false);
-    const [manualIndex, setManualIndex] = useState(-1);
-    const [isPausedAtTranquility, setIsPausedAtTranquility] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [duration, setDuration] = useState(null);
 
-    // Track which words have been counted to avoid double-counting
-    const countedWordsRef = useRef(new Set());
-    const pauseStartTimeRef = useRef(null);
-    const hasPausedAtTranquilityRef = useRef(false);
+  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [startsWithTCount, setStartsWithTCount] = useState(0);
+  const [endsWithECount, setEndsWithECount] = useState(0);
+  const [doesBothCount, setDoesBothCount] = useState(0);
 
-    // Create the YouTube player when API is loaded
-    useEffect(() => {
-        if (!containerRef.current) return;
+  const [loopRunning, setLoopRunning] = useState(false);
 
-        function onYouTubeIframeAPIReady() {
-            try {
-                // eslint-disable-next-line no-undef
-                if (!window.YT || !window.YT.Player) {
-                    console.error('YouTube API not available');
-                    return;
-                }
+  const [isManualMode, setIsManualMode] = useState(false);
+  const [manualIndex, setManualIndex] = useState(-1);
 
-                // eslint-disable-next-line no-undef
-                const player = new YT.Player(containerRef.current, {
-                    videoId: "8_NzZvdsbWI",
-                    events: {
-                        onReady: (event) => {
-                            // Verify player methods are available
-                            const readyPlayer = event.target;
-                            if (readyPlayer && 
-                                typeof readyPlayer.seekTo === 'function' && 
-                                typeof readyPlayer.playVideo === 'function' &&
-                                typeof readyPlayer.getCurrentTime === 'function') {
-                                playerRef.current = readyPlayer; // Ensure ref is set
-                                setReady(true);
-                                const d = readyPlayer.getDuration();
-                                setDuration(d);
-                            } else {
-                                console.error('YouTube player methods not available on ready');
-                            }
-                        },
-                        onStateChange: (event) => {
-                            // If video ended, stop the loop
-                            if (event.data === YT.PlayerState.ENDED) {
-                              setLoopRunning(false);
-                              setCurrentIndex(words.length - 1);
-                            }
-                          
-                            // Only stop the loop for "normal" pauses (user/manual),
-                         // but NOT for the special Tranquility pause
-                         if (
-                         event.data === YT.PlayerState.PAUSED &&
-                         !hasPausedAtTranquilityRef.current
-                         ) {
-                         setLoopRunning(false);
-                         }
-                        },
-                        onError: (event) => {
-                            console.error('YouTube player error:', event.data);
-                        },
-                    },
-                });
-                // Set ref immediately even before ready
-                playerRef.current = player;
-            } catch (error) {
-                console.error('Error creating YouTube player:', error);
-            }
+  const [isPausedAtTranquility, setIsPausedAtTranquility] = useState(false);
+
+  // Track which words have been counted to avoid double-counting
+  const countedWordsRef = useRef(new Set());
+  const pauseStartTimeRef = useRef(null);
+  const hasPausedAtTranquilityRef = useRef(false);
+  const lastIndexRef = useRef(-1);
+
+  // --- YouTube Player Setup ---
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    function onYouTubeIframeAPIReady() {
+      try {
+        if (!window.YT || !window.YT.Player) {
+          console.error("YouTube API not available");
+          return;
         }
 
-        // If API already loaded, call immediately
-        if (window.YT && window.YT.Player) {
-            onYouTubeIframeAPIReady();
-        } else {
-            // Attach to global callback YouTube expects
-            window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
-        }
-    }, []);
+        const player = new window.YT.Player(containerRef.current, {
+          videoId: "8_NzZvdsbWI",
+          events: {
+            onReady: (event) => {
+              const readyPlayer = event.target;
 
-    // Loop that reads currentTime and updates which word is active (for video sync)
-    const lastIndexRef = useRef(-1);
+              // verify methods exist
+              if (
+                readyPlayer &&
+                typeof readyPlayer.seekTo === "function" &&
+                typeof readyPlayer.playVideo === "function" &&
+                typeof readyPlayer.getCurrentTime === "function"
+              ) {
+                playerRef.current = readyPlayer;
+                setReady(true);
+                setDuration(readyPlayer.getDuration());
+              } else {
+                console.error("YouTube player methods not available on ready");
+              }
+            },
 
-    useEffect(() => {
-        if (!loopRunning || !playerRef.current || !duration || isManualMode || !ready) return;
-
-        let animationFrameId;
-
-        const update = () => {
-            if (!playerRef.current || typeof playerRef.current.getCurrentTime !== 'function') {
-                return;
-            }
-            
-            try {
-                const currentTime = playerRef.current.getCurrentTime();
-                const startOffset = 60.0; // Video starts at 1 minute (60 seconds)
-                const preambleEndTime = 90.0; // Adjust this to when the preamble ends in the video (e.g., 90 seconds = 1:30)
-                
-                // Only calculate progress after the start offset
-                if (currentTime < startOffset) {
-                    animationFrameId = requestAnimationFrame(update);
-                    return;
-                }
-                
-                // Stop if we've passed the preamble end time
-                if (currentTime > preambleEndTime) {
-                    setCurrentIndex(words.length - 1);
-                    animationFrameId = requestAnimationFrame(update);
-                    return;
-                }
-                
-                // Calculate progress using the preamble segment (startOffset to preambleEndTime)
-                const preambleDuration = preambleEndTime - startOffset;
-                const effectiveTime = currentTime - startOffset;
-                let progress = Math.min(effectiveTime / preambleDuration, 1.0); // 0 to 1, clamped
-                
-                // Apply gentle easing to start slightly slower
-                // Adjust the easing factor: 1.0 = no easing (linear), 1.1 = very gentle, 1.2 = gentle, 1.5 = more noticeable, 2.0 = quadratic
-                // Lower values = less slowdown at start, higher values = more slowdown
-                const easingFactor = 1.15; // Adjust this: lower = faster start, higher = slower start
-                const easedProgress = progress < 1 
-                    ? Math.pow(progress, easingFactor) 
-                    : progress;
-                
-                const index = Math.floor(easedProgress * words.length);
-            
-            // If we're paused at tranquility, keep highlighting it and don't advance
-            if (isPausedAtTranquility) {
-                // Find tranquility index
-                const tranquilityIndex = words.findIndex(w => w.toLowerCase().replace(/[.,]/g, '') === 'tranquility');
-                if (tranquilityIndex >= 0) {
-                    setCurrentIndex(tranquilityIndex);
-                }
-                animationFrameId = requestAnimationFrame(update);
-                return;
-            }
-            
-            if (index !== lastIndexRef.current && index >= 0 && index < words.length) {
-                // Check if we've reached "Tranquility" and need to pause
-                let word = words[index].toLowerCase();
-                let cleanWord = word.replace(/[.,]/g, '');
-                
-                // If we reach "tranquility" and haven't paused yet, pause the video
-                if (cleanWord === 'tranquility' && !hasPausedAtTranquilityRef.current) {
-                    hasPausedAtTranquilityRef.current = true;
-                    setIsPausedAtTranquility(true);
-                    pauseStartTimeRef.current = currentTime;
-                    
-                    // Set the index to tranquility first
-                    lastIndexRef.current = index;
-                    setCurrentIndex(index);
-                    
-                    // Pause the video
-                    try {
-                        if (playerRef.current && typeof playerRef.current.pauseVideo === 'function') {
-                            playerRef.current.pauseVideo();
-                        }
-                    } catch (error) {
-                        console.error('Error pausing video:', error);
-                    }
-                    
-                    // Resume after 0.3 seconds (very brief pause - just a slight emphasis)
-                    setTimeout(() => {
-                        try {
-                            if (playerRef.current) {
-                                // Get the time when we paused and seek forward to move past tranquility
-                                const pausedTime = pauseStartTimeRef.current || playerRef.current.getCurrentTime();
-                                // Seek forward enough to advance to next word (0.3 seconds should move past tranquility)
-                                playerRef.current.seekTo(pausedTime + 0.3, true);
-                                
-                                // Find tranquility index and set lastIndex to it
-                                // This ensures the update loop will detect the change when it recalculates
-                                const tranquilityIndex = words.findIndex(w => w.toLowerCase().replace(/[.,]/g, '') === 'tranquility');
-                                if (tranquilityIndex >= 0) {
-                                    lastIndexRef.current = tranquilityIndex;
-                                }
-                                
-                                // Clear pause state FIRST before resuming
-                                setIsPausedAtTranquility(false);
-                                pauseStartTimeRef.current = null;
-                                
-                                // Small delay to ensure state updates, then resume video
-                                setTimeout(() => {
-                                    if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
-                                        playerRef.current.playVideo();
-                                    }
-                                }, 50);
-                            }
-                        } catch (error) {
-                            console.error('Error resuming video:', error);
-                            setIsPausedAtTranquility(false);
-                            pauseStartTimeRef.current = null;
-                        }
-                    }, 300); // 0.3 second pause (just a brief emphasis)
-                    
-                    animationFrameId = requestAnimationFrame(update);
-                    return;
-                }
-                
-                lastIndexRef.current = index;
-                setCurrentIndex(index);
-
-                // Count logic - only count each word once
-                if (word.endsWith(",") || word.endsWith(".")) {
-                    word = word.slice(0, -1);
-                }
-                
-                // Use a unique key for each word index to track counting
-                const wordKey = `${index}-${word}`;
-                if (!countedWordsRef.current.has(wordKey)) {
-                    countedWordsRef.current.add(wordKey);
-                    
-                    if (word.startsWith("t")) {
-                        setStartsWithT((prev) => prev + 1);
-                    }
-                    if (word.endsWith("e")) {
-                        setEndsWithE((prev) => prev + 1);
-                    }
-                    if (word.startsWith("t") && word.endsWith("e")) {
-                        setDoesBoth((prev) => prev + 1);
-                    }
-                }
-            }
-
-                animationFrameId = requestAnimationFrame(update);
-            } catch (error) {
-                console.error('Error getting video current time:', error);
+            onStateChange: (event) => {
+              // stop if ended
+              if (event.data === window.YT.PlayerState.ENDED) {
                 setLoopRunning(false);
+                setCurrentIndex(words.length - 1);
+                return;
+              }
+
+              /**
+               * ✅ IMPORTANT FIX:
+               * Don't stop the loop when we PAUSE on purpose at "Tranquility".
+               * Use the ref, not React state (state update is async).
+               */
+              if (
+                event.data === window.YT.PlayerState.PAUSED &&
+                !hasPausedAtTranquilityRef.current
+              ) {
+                setLoopRunning(false);
+              }
+            },
+
+            onError: (event) => {
+              console.error("YouTube player error:", event.data);
+            },
+          },
+        });
+
+        // set ref immediately (safe)
+        playerRef.current = player;
+      } catch (error) {
+        console.error("Error creating YouTube player:", error);
+      }
+    }
+
+    // if API already loaded
+    if (window.YT && window.YT.Player) {
+      onYouTubeIframeAPIReady();
+    } else {
+      window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+    }
+  }, []);
+
+  // --- VIDEO SYNC LOOP ---
+  useEffect(() => {
+    if (!loopRunning || !playerRef.current || !duration || isManualMode || !ready) return;
+
+    let animationFrameId;
+
+    const update = () => {
+      if (!playerRef.current || typeof playerRef.current.getCurrentTime !== "function") {
+        return;
+      }
+
+      try {
+        const currentTime = playerRef.current.getCurrentTime();
+
+        const startOffset = 60.0;      // preamble starts ~ 1:00
+        const preambleEndTime = 90.0;  // adjust as needed
+
+        if (currentTime < startOffset) {
+          animationFrameId = requestAnimationFrame(update);
+          return;
+        }
+
+        if (currentTime > preambleEndTime) {
+          setCurrentIndex(words.length - 1);
+          animationFrameId = requestAnimationFrame(update);
+          return;
+        }
+
+        const preambleDuration = preambleEndTime - startOffset;
+        const effectiveTime = currentTime - startOffset;
+        const progress = Math.min(effectiveTime / preambleDuration, 1.0);
+
+        const easingFactor = 1.15;
+        const easedProgress = progress < 1 ? Math.pow(progress, easingFactor) : progress;
+
+        const index = Math.floor(easedProgress * words.length);
+
+        // If paused at tranquility, keep highlighting it
+        if (isPausedAtTranquility) {
+          const tranquilityIndex = words.findIndex(
+            (w) => w.toLowerCase().replace(/[.,]/g, "") === "tranquility"
+          );
+          if (tranquilityIndex >= 0) setCurrentIndex(tranquilityIndex);
+          animationFrameId = requestAnimationFrame(update);
+          return;
+        }
+
+        // advance index when it changes
+        if (index !== lastIndexRef.current && index >= 0 && index < words.length) {
+          const rawWord = words[index].toLowerCase();
+          const cleanWord = rawWord.replace(/[.,]/g, "");
+
+          // Pause briefly at Tranquility once
+          if (cleanWord === "tranquility" && !hasPausedAtTranquilityRef.current) {
+            hasPausedAtTranquilityRef.current = true; // set ref FIRST (important!)
+            setIsPausedAtTranquility(true);
+            pauseStartTimeRef.current = currentTime;
+
+            lastIndexRef.current = index;
+            setCurrentIndex(index);
+
+            try {
+              if (playerRef.current && typeof playerRef.current.pauseVideo === "function") {
+                playerRef.current.pauseVideo();
+              }
+            } catch (error) {
+              console.error("Error pausing video:", error);
             }
-        };
+
+            setTimeout(() => {
+              try {
+                if (playerRef.current) {
+                  const pausedTime =
+                    pauseStartTimeRef.current || playerRef.current.getCurrentTime();
+
+                  // nudge forward slightly to get past the word timing
+                  playerRef.current.seekTo(pausedTime + 0.3, true);
+
+                  // clear pause state before resuming
+                  setIsPausedAtTranquility(false);
+                  pauseStartTimeRef.current = null;
+
+                  setTimeout(() => {
+                    if (playerRef.current && typeof playerRef.current.playVideo === "function") {
+                      playerRef.current.playVideo();
+                    }
+                  }, 50);
+                }
+              } catch (error) {
+                console.error("Error resuming video:", error);
+                setIsPausedAtTranquility(false);
+                pauseStartTimeRef.current = null;
+              }
+            }, 1000); // ✅ pause for 1 second (you said you wanted ~1s)
+
+            animationFrameId = requestAnimationFrame(update);
+            return;
+          }
+
+          lastIndexRef.current = index;
+          setCurrentIndex(index);
+
+          // Count each word once
+          const wordKey = `${index}-${cleanWord}`;
+          if (!countedWordsRef.current.has(wordKey)) {
+            countedWordsRef.current.add(wordKey);
+
+            if (cleanWord.startsWith("t")) setStartsWithTCount((p) => p + 1);
+            if (cleanWord.endsWith("e")) setEndsWithECount((p) => p + 1);
+            if (cleanWord.startsWith("t") && cleanWord.endsWith("e")) setDoesBothCount((p) => p + 1);
+          }
+        }
 
         animationFrameId = requestAnimationFrame(update);
-
-        return () => cancelAnimationFrame(animationFrameId);
-    }, [loopRunning, duration, isManualMode, ready]);
-
-    // Manual animation mode (original timer-based)
-    useEffect(() => {
-        if (!isManualMode || loopRunning) return;
-
-        if (manualIndex >= words.length - 1) {
-            setIsManualMode(false);
-            return;
-        }
-
-        const timer = setTimeout(() => {
-            setManualIndex((prev) => {
-                const nextIndex = prev + 1;
-                if (nextIndex < words.length) {
-                    let word = words[nextIndex].toLowerCase().replace(/[.,]/g, '');
-
-            if (word.startsWith('t')) {
-                setStartsWithT((prev) => prev + 1);
-            }
-            if (word.endsWith('e')) {
-                setEndsWithE((prev) => prev + 1);
-            }
-            if (word.startsWith('t') && word.endsWith('e')) {
-                setDoesBoth((prev) => prev + 1);
-            }
-                }
-                return nextIndex;
-            });
-        }, 400);
-
-        return () => clearTimeout(timer);
-    }, [isManualMode, manualIndex, loopRunning]);
-
-    const handleStartWithVideo = () => {
-        if (!playerRef.current || !ready) {
-            console.warn('YouTube player not ready yet');
-            return;
-        }
-
-        // Check if player methods exist
-        if (typeof playerRef.current.seekTo !== 'function' || 
-            typeof playerRef.current.playVideo !== 'function') {
-            console.warn('YouTube player methods not available');
-            return;
-        }
-
-        // Reset everything
-        setStartsWithT(0);
-        setEndsWithE(0);
-        setDoesBoth(0);
-        setCurrentIndex(-1);
-        countedWordsRef.current.clear();
-        setIsManualMode(false);
-        setManualIndex(-1);
-        setIsPausedAtTranquility(false);
-        pauseStartTimeRef.current = null;
-        hasPausedAtTranquilityRef.current = false;
-        lastIndexRef.current = -1;
-
-        try {
-            playerRef.current.seekTo(60, true); // Start at 1 minute (60 seconds) where preamble begins
-            playerRef.current.playVideo();
-            setLoopRunning(true);
-        } catch (error) {
-            console.error('Error controlling YouTube player:', error);
-        }
-    };
-
-    const handleStartManual = () => {
-        // Reset everything
-            setStartsWithT(0);
-            setEndsWithE(0);
-            setDoesBoth(0);
-        setCurrentIndex(-1);
-        countedWordsRef.current.clear();
+      } catch (error) {
+        console.error("Error in video sync loop:", error);
         setLoopRunning(false);
-        setManualIndex(-1);
-        setIsManualMode(true);
-        setIsPausedAtTranquility(false);
-        pauseStartTimeRef.current = null;
-        hasPausedAtTranquilityRef.current = false;
-        
-        // Stop video if playing
-        if (playerRef.current && typeof playerRef.current.pauseVideo === 'function') {
-            try {
-                playerRef.current.pauseVideo();
-            } catch (error) {
-                console.error('Error pausing video:', error);
-            }
-        }
+      }
     };
 
-    // Use currentIndex for video sync, manualIndex for manual mode
-    const activeIndex = isManualMode ? manualIndex : currentIndex;
+    animationFrameId = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [loopRunning, duration, isManualMode, ready, isPausedAtTranquility]);
 
-        return (
-            <div className="content-wrapper">
-              <div className="patriotic-header">
-                <h1 className="patriotic-title">
-                  🇺🇸 Preamble Word Analyzer 🇺🇸
-              </h1>
-                <p className="patriotic-subtitle">Analyzing Our Nation's Founding Words</p>
-              </div>
-        
-              {/* Preamble text with animated highlight */}
-              <div className="preamble-large">
-                {words.map((word, i) => {
-                  // Check if word has been passed (index < activeIndex)
-                  const hasBeenPassed = i < activeIndex;
-                  
-                  // Clean word for checking (remove punctuation)
-                  const cleanWord = word.toLowerCase().replace(/[.,]/g, '');
-                  
-                  // Check word characteristics
-                  const startsWithT = cleanWord.startsWith('t');
-                  const endsWithE = cleanWord.endsWith('e');
-                  const doesBoth = startsWithT && endsWithE;
-                  
-                  // Determine color class
-                  let colorClass = '';
-                  if (hasBeenPassed) {
-                    if (doesBoth) {
-                      colorClass = 'text-blue-600 font-semibold';
-                    } else if (startsWithT) {
-                      colorClass = 'text-green-600 font-semibold';
-                    } else if (endsWithE) {
-                      colorClass = 'text-red-600 font-semibold';
-                    }
-                  }
-                  
-                  return (
-                    <span
-                      key={i}
-                      className={
-                        "word " +
-                        (i === activeIndex ? "highlighted" : "") +
-                        (colorClass ? " " + colorClass : "")
-                      }
-                    >
-                      {word + " "}
-                    </span>
-                  );
-                })}
-              </div>
-        
-              {/* YouTube Video */}
-              <div className="video-container">
-                <div
-                  ref={containerRef}
-                  className="youtube-iframe"
-                />
-                <p className="video-credit">
-                  Video credit: Schoolhouse Rock / Disney Educational Productions. 
-                  Embedded under YouTube&apos;s permitted embed usage.
-                </p>
-              </div>
-        
-              <div className="button-container">
-                <button
-                  onClick={handleStartWithVideo}
-                  disabled={!ready || loopRunning}
-                  className="patriotic-button patriotic-button-secondary"
-                >
-                  {!ready ? "Loading YouTube Player..." : (loopRunning ? "Playing..." : "Play Song & Sync")}
-              </button>
-              </div>
-              {loopRunning && !isManualMode && (
-                <p className="sync-instruction">
-                  💡 The animation is synced with the video! Words highlight in real-time as the song plays.
-                </p>
-              )}
-        
-              {/* Stats row */}
-              <div className="stats-large grid gap-6 md:grid-cols-3">
-                <StatCard
-                  label='Starts with "t"'
-                  value={startsWithT}
-                  accent="green"
-                />
-                <StatCard
-                  label='Ends with "e"'
-                  value={endsWithE}
-                  accent="red"
-                />
-                <StatCard
-                  label='Starts with "t" & ends with "e"'
-                  value={doesBoth}
-                  accent="blue"
-                />
-              </div>
-            </div>
-          );
+  // --- MANUAL MODE LOOP ---
+  useEffect(() => {
+    if (!isManualMode || loopRunning) return;
+
+    if (manualIndex >= words.length - 1) {
+      setIsManualMode(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setManualIndex((prev) => {
+        const nextIndex = prev + 1;
+
+        if (nextIndex < words.length) {
+          const cleanWord = words[nextIndex].toLowerCase().replace(/[.,]/g, "");
+
+          if (cleanWord.startsWith("t")) setStartsWithTCount((p) => p + 1);
+          if (cleanWord.endsWith("e")) setEndsWithECount((p) => p + 1);
+          if (cleanWord.startsWith("t") && cleanWord.endsWith("e")) setDoesBothCount((p) => p + 1);
         }
-        
-        // StatCard component
-        function StatCard({ label, value, accent }) {
-          // Map accent to border and background colors - patriotic colors with gradients
-          const colorClasses = {
-            green: {
-              border: 'border-green-600',
-              text: 'text-white',
-              gradientFrom: '#16a34a',
-              gradientTo: '#22c55e'
-            },
-            red: {
-              border: 'border-patriotic-red',
-              text: 'text-white',
-              gradientFrom: '#bf0a30',
-              gradientTo: '#e63946'
-            },
-            blue: {
-              border: 'border-patriotic-blue',
-              text: 'text-white',
-              gradientFrom: '#002868',
-              gradientTo: '#1a4480'
-            }
-          };
-          
-          const colors = colorClasses[accent] || colorClasses.green;
-          
-          return (
-            <div 
-              className={`stat-card-large relative overflow-hidden rounded-2xl shadow-2xl`}
-              style={{
-                background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`,
-                boxShadow: `0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px ${colors.gradientFrom}40`
-              }}
+
+        return nextIndex;
+      });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [isManualMode, manualIndex, loopRunning]);
+
+  // --- BUTTON HANDLERS ---
+  const resetAll = () => {
+    setStartsWithTCount(0);
+    setEndsWithECount(0);
+    setDoesBothCount(0);
+
+    setCurrentIndex(-1);
+    setManualIndex(-1);
+
+    countedWordsRef.current.clear();
+    setIsPausedAtTranquility(false);
+    pauseStartTimeRef.current = null;
+    hasPausedAtTranquilityRef.current = false;
+    lastIndexRef.current = -1;
+  };
+
+  const handleStartWithVideo = () => {
+    if (!playerRef.current || !ready) return;
+    if (typeof playerRef.current.seekTo !== "function" || typeof playerRef.current.playVideo !== "function") {
+      console.warn("YouTube player methods not available");
+      return;
+    }
+
+    resetAll();
+    setIsManualMode(false);
+
+    try {
+      playerRef.current.seekTo(60, true);
+      playerRef.current.playVideo();
+      setLoopRunning(true);
+    } catch (error) {
+      console.error("Error controlling YouTube player:", error);
+    }
+  };
+
+  const handleStartManual = () => {
+    resetAll();
+    setLoopRunning(false);
+    setIsManualMode(true);
+
+    if (playerRef.current && typeof playerRef.current.pauseVideo === "function") {
+      try {
+        playerRef.current.pauseVideo();
+      } catch (error) {
+        console.error("Error pausing video:", error);
+      }
+    }
+  };
+
+  const activeIndex = isManualMode ? manualIndex : currentIndex;
+
+  return (
+    <div className="min-h-screen bg-[#111217] text-slate-100 flex items-center justify-center px-4 py-10">
+      <main className="w-full max-w-6xl rounded-3xl bg-gradient-to-b from-[#181921] to-[#101117] shadow-2xl border border-white/5 p-6 md:p-10 space-y-8">
+
+        {/* Title */}
+        <header className="text-center space-y-4">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide text-rose-300">
+            Preamble Analyzer
+          </h1>
+
+          <div className="flex items-center justify-center gap-4">
+            <img
+              src="/abraham-lincoln.png"
+              alt="Lincoln"
+              className="h-12 w-12 md:h-16 md:w-16 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+            />
+            <img
+              src="/capitol.png"
+              alt="Capitol"
+              className="h-12 w-12 md:h-16 md:w-16 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={handleStartWithVideo}
+              disabled={!ready || loopRunning}
+              className="rounded-full bg-blue-600 px-6 py-2.5 text-sm md:text-base font-semibold shadow-lg shadow-blue-500/40 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
-              <div className="px-6 py-5 relative z-10">
-                <p className={`text-sm font-bold uppercase tracking-wider ${colors.text} mb-3 opacity-95`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                  {label}
-                </p>
-                <div className="flex items-end justify-between">
-                  <span
-                    key={value} // forces re-mount so animation restarts
-                    className={`text-5xl font-black ${colors.text} drop-shadow-2xl`}
-                    style={{ 
-                      textShadow: '0 4px 8px rgba(0,0,0,0.4), 0 0 20px rgba(255,255,255,0.3)',
-                      animation: 'pulse 0.3s ease-out'
-                    }}
-                  >
-                    {value}
-                  </span>
-                  <span className={`text-sm ${colors.text} opacity-90 ml-3 font-bold uppercase tracking-wide`} style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
-                    words
-                  </span>
-                </div>
-              </div>
-              <div 
-                className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 blur-2xl"
-                style={{ background: colors.gradientTo, transform: 'translate(30%, -30%)' }}
-              />
-              <div 
-                className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-20 blur-xl"
-                style={{ background: colors.gradientFrom, transform: 'translate(-30%, 30%)' }}
-              />
-            </div>
-          );
-        }
+              {!ready ? "Loading YouTube Player..." : loopRunning ? "Playing…" : "Play Song & Sync"}
+            </button>
+
+            <button
+              onClick={handleStartManual}
+              disabled={loopRunning || isManualMode}
+              className="rounded-full border border-slate-600 bg-slate-800 px-6 py-2.5 text-sm md:text-base font-semibold hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+            >
+              {isManualMode ? "Animating…" : "Run Animation Only"}
+            </button>
+          </div>
+        </header>
+
+        {/* Preamble Text - Full Width */}
+        <div style={{ 
+          background: 'rgba(248, 250, 252, 0.95)', 
+          color: '#1e293b',
+          padding: '2.5rem',
+          borderRadius: '1.5rem',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+          marginBottom: '2rem'
+        }}>
+          <p style={{ 
+            lineHeight: '2',
+            fontSize: '1.1rem',
+            textAlign: 'center'
+          }}>
+            {words.map((word, i) => {
+              const hasBeenPassed = i < activeIndex;
+              const clean = word.toLowerCase().replace(/[.,]/g, "");
+
+              const startsT = clean.startsWith("t");
+              const endsE = clean.endsWith("e");
+              const both = startsT && endsE;
+
+              let colorStyle = {};
+              let bgStyle = {};
+              
+              if (i === activeIndex) {
+                bgStyle = { backgroundColor: '#fef08a', boxShadow: '0 0 0 1px rgba(0,0,0,0.15)' };
+              }
+              
+              if (hasBeenPassed) {
+                if (both) colorStyle = { color: '#2563eb', fontWeight: '600' };
+                else if (startsT) colorStyle = { color: '#16a34a', fontWeight: '600' };
+                else if (endsE) colorStyle = { color: '#dc2626', fontWeight: '600' };
+              }
+
+              return (
+                <span
+                  key={i}
+                  style={{
+                    padding: '0 2px',
+                    borderRadius: '4px',
+                    transition: 'all 0.15s',
+                    ...bgStyle,
+                    ...colorStyle
+                  }}
+                >
+                  {word + " "}
+                </span>
+              );
+            })}
+          </p>
+        </div>
+
+        {/* Stats Row */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1.5rem',
+          marginBottom: '2rem'
+        }}>
+          <StatCard label='Starts with "t"' value={startsWithTCount} accent="green" />
+          <StatCard label='Ends with "e"' value={endsWithECount} accent="red" />
+          <StatCard label='Starts with "t" & ends with "e"' value={doesBothCount} accent="blue" />
+        </div>
+
+        {/* Video */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          flexDirection: 'column',
+          gap: '0.75rem',
+          marginBottom: '2rem'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '600px',
+            aspectRatio: '16/9',
+            borderRadius: '1.25rem',
+            overflow: 'hidden',
+            border: '3px solid #334155',
+            backgroundColor: '#000',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
+          }}>
+            <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+          </div>
+          <p style={{
+            fontSize: '0.75rem',
+            textAlign: 'center',
+            color: '#94a3b8'
+          }}>
+            Video credit: Schoolhouse Rock / Disney Educational Productions. Embedded under YouTube&apos;s permitted embed usage.
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// StatCard component (kept close to what you had)
+function StatCard({ label, value, accent }) {
+  const colorClasses = {
+    green: { from: "#16a34a", to: "#22c55e" },
+    red: { from: "#bf0a30", to: "#e63946" },
+    blue: { from: "#002868", to: "#1a4480" },
+  };
+
+  const colors = colorClasses[accent] || colorClasses.green;
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl shadow-2xl"
+      style={{
+        background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
+        boxShadow: `0 20px 40px rgba(0,0,0,0.3), 0 0 30px ${colors.from}40`,
+      }}
+    >
+      <div className="px-5 py-4 relative z-10 w-full">
+        <p
+          className="text-xs md:text-sm font-bold uppercase tracking-wider text-white mb-2 opacity-95"
+          style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
+        >
+          {label}
+        </p>
+
+        <div className="flex items-baseline justify-between w-full">
+          <span
+            key={value}
+            className="text-4xl md:text-5xl font-black text-white leading-none"
+            style={{
+              textShadow: "0 4px 8px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.25)",
+            }}
+          >
+            {value}
+          </span>
+
+          <span
+            className="text-[11px] md:text-xs text-white opacity-90 ml-3 font-bold uppercase tracking-wide"
+            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}
+          >
+            words
+          </span>
+        </div>
+      </div>
+
+      <div
+        className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 blur-2xl"
+        style={{ background: colors.to, transform: "translate(30%, -30%)" }}
+      />
+      <div
+        className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-20 blur-xl"
+        style={{ background: colors.from, transform: "translate(-30%, 30%)" }}
+      />
+    </div>
+  );
+}
