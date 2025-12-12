@@ -118,8 +118,8 @@ export default function PreambleAnalyzer() {
       try {
         const currentTime = playerRef.current.getCurrentTime();
 
-        const startOffset = 60.0;      // preamble starts ~ 1:00
-        const preambleEndTime = 90.0;  // adjust as needed
+        const startOffset = 61.0;      // preamble starts ~ 1:01
+        const preambleEndTime = 99.5;  // preamble ends at 1:39
 
         if (currentTime < startOffset) {
           animationFrameId = requestAnimationFrame(update);
@@ -128,7 +128,15 @@ export default function PreambleAnalyzer() {
 
         if (currentTime > preambleEndTime) {
           setCurrentIndex(words.length - 1);
-          animationFrameId = requestAnimationFrame(update);
+          setLoopRunning(false);
+          // Stop the video
+          try {
+            if (playerRef.current && typeof playerRef.current.pauseVideo === "function") {
+              playerRef.current.pauseVideo();
+            }
+          } catch (error) {
+            console.error("Error pausing video at end:", error);
+          }
           return;
         }
 
@@ -180,7 +188,7 @@ export default function PreambleAnalyzer() {
                     pauseStartTimeRef.current || playerRef.current.getCurrentTime();
 
                   // nudge forward slightly to get past the word timing
-                  playerRef.current.seekTo(pausedTime + 0.3, true);
+                 
 
                   // clear pause state before resuming
                   setIsPausedAtTranquility(false);
@@ -283,7 +291,7 @@ export default function PreambleAnalyzer() {
     setIsManualMode(false);
 
     try {
-      playerRef.current.seekTo(60, true);
+      playerRef.current.seekTo(61, true);
       playerRef.current.playVideo();
       setLoopRunning(true);
     } catch (error) {
