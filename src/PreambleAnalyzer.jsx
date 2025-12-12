@@ -382,8 +382,8 @@ export default function PreambleAnalyzer() {
                     <span
                       key={i}
                       className={
-                        "px-0.5 rounded-sm transition-colors duration-150 " +
-                        (i === activeIndex ? "bg-yellow-200 shadow-[0_0_0_1px_rgba(0,0,0,0.08)]" : "") +
+                        "word " +
+                        (i === activeIndex ? "highlighted" : "") +
                         (colorClass ? " " + colorClass : "")
                       }
                     >
@@ -444,45 +444,66 @@ export default function PreambleAnalyzer() {
         
         // StatCard component
         function StatCard({ label, value, accent }) {
-          // Map accent to border and background colors - patriotic colors
+          // Map accent to border and background colors - patriotic colors with gradients
           const colorClasses = {
             green: {
               border: 'border-green-600',
-              bg: 'bg-green-600',
-              text: 'text-white'
+              text: 'text-white',
+              gradientFrom: '#16a34a',
+              gradientTo: '#22c55e'
             },
             red: {
               border: 'border-patriotic-red',
-              bg: 'bg-patriotic-red',
-              text: 'text-white'
+              text: 'text-white',
+              gradientFrom: '#bf0a30',
+              gradientTo: '#e63946'
             },
             blue: {
               border: 'border-patriotic-blue',
-              bg: 'bg-patriotic-blue',
-              text: 'text-white'
+              text: 'text-white',
+              gradientFrom: '#002868',
+              gradientTo: '#1a4480'
             }
           };
           
           const colors = colorClasses[accent] || colorClasses.green;
           
           return (
-            <div className={`stat-card-large relative overflow-hidden rounded-xl border-3 ${colors.border} ${colors.bg} shadow-xl`}>
-              <div className="px-5 py-4">
-                <p className={`text-xs font-bold uppercase tracking-wide ${colors.text} mb-1 opacity-90`}>
+            <div 
+              className={`stat-card-large relative overflow-hidden rounded-2xl shadow-2xl`}
+              style={{
+                background: `linear-gradient(135deg, ${colors.gradientFrom} 0%, ${colors.gradientTo} 100%)`,
+                boxShadow: `0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px ${colors.gradientFrom}40`
+              }}
+            >
+              <div className="px-6 py-5 relative z-10">
+                <p className={`text-sm font-bold uppercase tracking-wider ${colors.text} mb-3 opacity-95`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
                   {label}
                 </p>
                 <div className="flex items-end justify-between">
                   <span
                     key={value} // forces re-mount so animation restarts
-                    className={`text-4xl font-black ${colors.text} animate-[pulse_0.25s_ease-out] drop-shadow-lg`}
+                    className={`text-5xl font-black ${colors.text} drop-shadow-2xl`}
+                    style={{ 
+                      textShadow: '0 4px 8px rgba(0,0,0,0.4), 0 0 20px rgba(255,255,255,0.3)',
+                      animation: 'pulse 0.3s ease-out'
+                    }}
                   >
                     {value}
                   </span>
-                  <span className={`text-xs ${colors.text} opacity-80 ml-2 font-semibold`}>
+                  <span className={`text-sm ${colors.text} opacity-90 ml-3 font-bold uppercase tracking-wide`} style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
                     words
                   </span>
                 </div>
               </div>
+              <div 
+                className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 blur-2xl"
+                style={{ background: colors.gradientTo, transform: 'translate(30%, -30%)' }}
+              />
+              <div 
+                className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-20 blur-xl"
+                style={{ background: colors.gradientFrom, transform: 'translate(-30%, 30%)' }}
+              />
             </div>
           );
         }
