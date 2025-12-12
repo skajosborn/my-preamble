@@ -1,39 +1,133 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 
+/**
+ * PreambleAnalyzer
+ * ------------------------------------------------------------
+ * What this component does:
+ * 1) Displays the U.S. Constitution preamble word by word.
+ * 2) Highlights the "active" word in yellow as time progresses.
+ * 3) Counts how many words (by index):
+ *   - Start with "t"
+ *   - End with "e"
+ *   - Start with "t" AND end with "e"
+ * 4) Supports two modes:
+ *   - Animation mode: Loops through the words on a timer and increments the coordinating counter each time it finds a word that starts with "t" or ends with "e" or starts with "t" and ends with "e".
+ *   - Song and sync mode: Syncs animation mode to a Schoolhouse Rock song on the Preamble.
+ * 
+ * Key design choices:
+ * - `useRef` is used for instant truth values 
+ * - `useEffect` is used for side effects like setting up the YouTube player and syncing the animation to the song.
+ * - `useState` is used for state management.
+ * - `countedWordsRef` is used to avoid double-counting words.
+ * - Computed indices are clamped to avoid out-of-range errors.
+**/
+
+
+/** The Preamble to the Constitution as a string of words */
 const PREAMBLE =
   'We the People, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.';
 
-const words = PREAMBLE.split(" ");
+/**
+ * YouTube video timing configuration.
+ * Adjust these constants if video timing synchronization is off.
+ */
+const VIDEO_ID = "8_NzZvdsbWI";
+const START_OFFSET_SECONDS = 61.0; // Start time of the Preamble in the video (seconds)
+const PREAMBLE_END_SECONDS = 99.6; // End time of the Preamble in the video (seconds)
 
+/** Regular expression to remove punctuation from words */
+const PUNCTUATION_REGEX = /[.,]/g;
+
+/** Easing factor for smooth word highlighting transitions (exponential easing) */
+const EASING_FACTOR = 1.15; 
+
+/**
+ * Utility: Clamps a number between min and max values.
+ * 
+ * @param {number} n - The number to clamp
+ * @param {number} min - Minimum value
+ * @param {number} max - Maximum value
+ * @returns {number} The clamped value
+ */
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+/**
+ * Utility: Normalizes a word by removing punctuation and converting to lowercase.
+ * 
+ * @param {string} word - The word to normalize
+ * @returns {string} The normalized word (lowercase, no punctuation)
+ */
+function normalizeWord(word) {
+  return word.toLowerCase().replace(PUNCTUATION_REGEX, "");
+}
+
+/**
+ * Utility: Computes word characteristics for counting purposes.
+ * Determines if a word starts with "t", ends with "e", or both.
+ * 
+ * @param {string} word - The word to analyze (will be normalized internally)
+ * @returns {Object} Object with startsT, endsE, and both boolean properties
+ */
+function computeCounts(word) {
+  const cleanWord = normalizeWord(word);
+  const startsT = cleanWord.startsWith("t");
+  const endsE = cleanWord.endsWith("e");
+  const both = startsT && endsE;
+  return { startsT, endsE, both };
+}
+
+/** Main component */
+/**
+ * Main PreambleAnalyzer component.
+ * Manages word highlighting, counting, and video synchronization.
+ */
 export default function PreambleAnalyzer() {
-  const playerRef = useRef(null);
-  const containerRef = useRef(null);
+  /** The Preamble as an array of words (memoized to avoid recalculation) */
+  const words = useMemo(() => PREAMBLE.split(" "), []);
+  // Refs for YouTube player management
+  const playerRef = useRef(null); // Stores the YouTube player instance
+  const containerRef = useRef(null); // Container element for the YouTube player
 
-  const [ready, setReady] = useState(false);
-  const [duration, setDuration] = useState(null);
-
-  const [currentIndex, setCurrentIndex] = useState(-1);
-  const [startsWithTCount, setStartsWithTCount] = useState(0);
-  const [endsWithECount, setEndsWithECount] = useState(0);
-  const [doesBothCount, setDoesBothCount] = useState(0);
-
-  const [loopRunning, setLoopRunning] = useState(false);
-
-  const [isManualMode, setIsManualMode] = useState(false);
-  const [manualIndex, setManualIndex] = useState(-1);
-
-  const [isPausedAtTranquility, setIsPausedAtTranquility] = useState(false);
-
-  // Track which words have been counted to avoid double-counting
+  // Refs for animation state tracking (using refs for instant truth values)
+  /** Tracks which words have been counted to avoid double-counting */
   const countedWordsRef = useRef(new Set());
-  const pauseStartTimeRef = useRef(null);
-  const hasPausedAtTranquilityRef = useRef(false);
+  /** Tracks the last word index that was processed */
   const lastIndexRef = useRef(-1);
 
-  // --- YouTube Player Setup ---
+  // ------------------------------------------------------------
+  // React State Declarations
+  // ------------------------------------------------------------
+  // YouTube player state
+  const [ready, setReady] = useState(false); // Whether the YouTube player is ready
+  const [duration, setDuration] = useState(null); // Duration of the video in seconds
+
+  // Word highlighting and counting state
+  const [currentIndex, setCurrentIndex] = useState(-1); // Current active word index in video sync mode
+  const [startsWithTCount, setStartsWithTCount] = useState(0); // Count of words starting with "t"
+  const [endsWithECount, setEndsWithECount] = useState(0); // Count of words ending with "e"
+  const [doesBothCount, setDoesBothCount] = useState(0); // Count of words starting with "t" AND ending with "e"
+
+  // Animation control state
+  const [loopRunning, setLoopRunning] = useState(false); // Whether the video sync animation loop is running
+  const [isManualMode, setIsManualMode] = useState(false); // Whether manual animation mode is active
+  const [manualIndex, setManualIndex] = useState(-1); // Current active word index in manual mode 
+
+// ------------------------------------------------------------
+// YouTube Player Setup
+// ------------------------------------------------------------
+  /**
+   * Sets up the YouTube iframe player when the component mounts.
+   * Handles both cases: when the API is already loaded and when it needs to load.
+   */
   useEffect(() => {
     if (!containerRef.current) return;
 
+    /**
+     * Callback function for when the YouTube iframe API is ready.
+     * Creates the YouTube player instance and sets up event handlers.
+     */
     function onYouTubeIframeAPIReady() {
       try {
         if (!window.YT || !window.YT.Player) {
@@ -41,13 +135,18 @@ export default function PreambleAnalyzer() {
           return;
         }
 
+        // Create and store player instance
         const player = new window.YT.Player(containerRef.current, {
-          videoId: "8_NzZvdsbWI",
+          videoId: VIDEO_ID,
           events: {
+            /**
+             * Called when the player is ready to accept commands.
+             * Verifies required methods exist and initializes player state.
+             */
             onReady: (event) => {
               const readyPlayer = event.target;
 
-              // verify methods exist
+              // Verify required methods exist
               if (
                 readyPlayer &&
                 typeof readyPlayer.seekTo === "function" &&
@@ -62,74 +161,87 @@ export default function PreambleAnalyzer() {
               }
             },
 
+            /**
+             * Handles player state changes (playing, paused, ended, etc.).
+             */
             onStateChange: (event) => {
-              // stop if ended
+              // Stop if video ended
               if (event.data === window.YT.PlayerState.ENDED) {
                 setLoopRunning(false);
                 setCurrentIndex(words.length - 1);
                 return;
               }
 
-              /**
-               * ✅ IMPORTANT FIX:
-               * Don't stop the loop when we PAUSE on purpose at "Tranquility".
-               * Use the ref, not React state (state update is async).
-               */
-              if (
-                event.data === window.YT.PlayerState.PAUSED &&
-                !hasPausedAtTranquilityRef.current
-              ) {
+              // Stop loop if video is paused
+              if (event.data === window.YT.PlayerState.PAUSED) {
                 setLoopRunning(false);
               }
             },
 
+            /**
+             * Error handler for YouTube player errors.
+             */
             onError: (event) => {
               console.error("YouTube player error:", event.data);
             },
           },
         });
 
-        // set ref immediately (safe)
+        // Store player instance (also stored in onReady, but keeping here for safety)
         playerRef.current = player;
       } catch (error) {
         console.error("Error creating YouTube player:", error);
       }
     }
 
-    // if API already loaded
+    // If API is already loaded, create the player immediately.
+    // Otherwise, wait for the global callback.
     if (window.YT && window.YT.Player) {
       onYouTubeIframeAPIReady();
     } else {
       window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
     }
-  }, []);
+  }, []); // Empty deps: only run on mount
 
-  // --- VIDEO SYNC LOOP ---
+  // ------------------------------------------------------------
+  // Video Sync Loop
+  // ------------------------------------------------------------
+  /**
+   * Synchronizes word highlighting with the YouTube video playback.
+   * Uses requestAnimationFrame to smoothly update the active word index
+   * based on the current video playback time.
+   */
   useEffect(() => {
-    if (!loopRunning || !playerRef.current || !duration || isManualMode || !ready) return;
+    // Early return if conditions aren't met for video sync
+    if (!loopRunning || !playerRef.current || !duration || isManualMode || !ready) {
+      return;
+    }
 
     let animationFrameId;
 
+    /**
+     * Animation frame callback that updates the active word index
+     * based on the current video playback time.
+     */
     const update = () => {
-      if (!playerRef.current || typeof playerRef.current.getCurrentTime !== "function") {
+      if (!playerRef.current || typeof playerRef.current.getCurrentTime !== "function") { 
         return;
       }
 
       try {
         const currentTime = playerRef.current.getCurrentTime();
 
-        const startOffset = 61.0;      // preamble starts ~ 1:01
-        const preambleEndTime = 99.5;  // preamble ends at 1:39
-
-        if (currentTime < startOffset) {
+        // Wait until the preamble section starts
+        if (currentTime < START_OFFSET_SECONDS) {
           animationFrameId = requestAnimationFrame(update);
           return;
         }
 
-        if (currentTime > preambleEndTime) {
+        // Stop when the preamble ends
+        if (currentTime > PREAMBLE_END_SECONDS) {
           setCurrentIndex(words.length - 1);
           setLoopRunning(false);
-          // Stop the video
+          // Pause the video when preamble completes
           try {
             if (playerRef.current && typeof playerRef.current.pauseVideo === "function") {
               playerRef.current.pauseVideo();
@@ -140,88 +252,40 @@ export default function PreambleAnalyzer() {
           return;
         }
 
-        const preambleDuration = preambleEndTime - startOffset;
-        const effectiveTime = currentTime - startOffset;
+        // Calculate progress through the preamble (0.0 to 1.0)
+        const preambleDuration = PREAMBLE_END_SECONDS - START_OFFSET_SECONDS;
+        const effectiveTime = currentTime - START_OFFSET_SECONDS;
         const progress = Math.min(effectiveTime / preambleDuration, 1.0);
 
-        const easingFactor = 1.15;
-        const easedProgress = progress < 1 ? Math.pow(progress, easingFactor) : progress;
+        // Apply easing for smoother visual transitions
+        const easedProgress = progress < 1 ? Math.pow(progress, EASING_FACTOR) : progress;
 
+        // Map eased progress to word index
         const index = Math.floor(easedProgress * words.length);
 
-        // If paused at tranquility, keep highlighting it
-        if (isPausedAtTranquility) {
-          const tranquilityIndex = words.findIndex(
-            (w) => w.toLowerCase().replace(/[.,]/g, "") === "tranquility"
-          );
-          if (tranquilityIndex >= 0) setCurrentIndex(tranquilityIndex);
-          animationFrameId = requestAnimationFrame(update);
-          return;
-        }
-
-        // advance index when it changes
+        // Advance index when it changes
         if (index !== lastIndexRef.current && index >= 0 && index < words.length) {
-          const rawWord = words[index].toLowerCase();
-          const cleanWord = rawWord.replace(/[.,]/g, "");
-
-          // Pause briefly at Tranquility once
-          if (cleanWord === "tranquility" && !hasPausedAtTranquilityRef.current) {
-            hasPausedAtTranquilityRef.current = true; // set ref FIRST (important!)
-            setIsPausedAtTranquility(true);
-            pauseStartTimeRef.current = currentTime;
-
-            lastIndexRef.current = index;
-            setCurrentIndex(index);
-
-            try {
-              if (playerRef.current && typeof playerRef.current.pauseVideo === "function") {
-                playerRef.current.pauseVideo();
-              }
-            } catch (error) {
-              console.error("Error pausing video:", error);
-            }
-
-            setTimeout(() => {
-              try {
-                if (playerRef.current) {
-                  const pausedTime =
-                    pauseStartTimeRef.current || playerRef.current.getCurrentTime();
-
-                  // nudge forward slightly to get past the word timing
-                 
-
-                  // clear pause state before resuming
-                  setIsPausedAtTranquility(false);
-                  pauseStartTimeRef.current = null;
-
-                  setTimeout(() => {
-                    if (playerRef.current && typeof playerRef.current.playVideo === "function") {
-                      playerRef.current.playVideo();
-                    }
-                  }, 50);
-                }
-              } catch (error) {
-                console.error("Error resuming video:", error);
-                setIsPausedAtTranquility(false);
-                pauseStartTimeRef.current = null;
-              }
-            }, 1000); // ✅ pause for 1 second (you said you wanted ~1s)
-
-            animationFrameId = requestAnimationFrame(update);
-            return;
-          }
+          const cleanWord = normalizeWord(words[index]);
 
           lastIndexRef.current = index;
           setCurrentIndex(index);
 
-          // Count each word once
+          // Count each word once using a unique key (index + word)
           const wordKey = `${index}-${cleanWord}`;
           if (!countedWordsRef.current.has(wordKey)) {
             countedWordsRef.current.add(wordKey);
 
-            if (cleanWord.startsWith("t")) setStartsWithTCount((p) => p + 1);
-            if (cleanWord.endsWith("e")) setEndsWithECount((p) => p + 1);
-            if (cleanWord.startsWith("t") && cleanWord.endsWith("e")) setDoesBothCount((p) => p + 1);
+            // Update counters based on word characteristics
+            const counts = computeCounts(cleanWord);
+            if (counts.startsT) {
+              setStartsWithTCount((p) => p + 1);
+            }
+            if (counts.endsE) {
+              setEndsWithECount((p) => p + 1);
+            }
+            if (counts.both) {
+              setDoesBothCount((p) => p + 1);
+            }
           }
         }
 
@@ -232,57 +296,95 @@ export default function PreambleAnalyzer() {
       }
     };
 
+    // Start the animation loop
     animationFrameId = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [loopRunning, duration, isManualMode, ready, isPausedAtTranquility]);
 
-  // --- MANUAL MODE LOOP ---
+    // Cleanup: cancel animation frame on unmount or dependency change
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [loopRunning, duration, isManualMode, ready, words.length]);
+
+  // ------------------------------------------------------------
+  // Manual Mode Loop
+  // ------------------------------------------------------------
+  /**
+   * Handles word-by-word animation when in manual mode (no video sync).
+   * Advances through words at a fixed interval and updates counters.
+   */
   useEffect(() => {
+    // Don't run if manual mode is off or video loop is running
     if (!isManualMode || loopRunning) return;
 
+    // Stop when we reach the last word
     if (manualIndex >= words.length - 1) {
       setIsManualMode(false);
       return;
     }
 
+    // Advance to next word after a delay
     const timer = setTimeout(() => {
       setManualIndex((prev) => {
         const nextIndex = prev + 1;
 
         if (nextIndex < words.length) {
-          const cleanWord = words[nextIndex].toLowerCase().replace(/[.,]/g, "");
+          const cleanWord = normalizeWord(words[nextIndex]);
 
-          if (cleanWord.startsWith("t")) setStartsWithTCount((p) => p + 1);
-          if (cleanWord.endsWith("e")) setEndsWithECount((p) => p + 1);
-          if (cleanWord.startsWith("t") && cleanWord.endsWith("e")) setDoesBothCount((p) => p + 1);
+          // Update counters based on word characteristics
+          const counts = computeCounts(cleanWord);
+          if (counts.startsT) {
+            setStartsWithTCount((p) => p + 1);
+          }
+          if (counts.endsE) {
+            setEndsWithECount((p) => p + 1);
+          }
+          if (counts.both) {
+            setDoesBothCount((p) => p + 1);
+          }
         }
 
         return nextIndex;
       });
-    }, 400);
+    }, 400); // 400ms delay between words
 
+    // Cleanup: clear timeout on unmount or dependency change
     return () => clearTimeout(timer);
-  }, [isManualMode, manualIndex, loopRunning]);
+  }, [isManualMode, manualIndex, loopRunning, words.length]);
 
-  // --- BUTTON HANDLERS ---
+  // ------------------------------------------------------------
+  // Button Handlers
+  // ------------------------------------------------------------
+  /**
+   * Resets all counters, indices, and refs to their initial state.
+   * Called when starting a new animation session.
+   */
   const resetAll = () => {
+    // Reset counters
     setStartsWithTCount(0);
     setEndsWithECount(0);
     setDoesBothCount(0);
 
+    // Reset indices
     setCurrentIndex(-1);
     setManualIndex(-1);
 
+    // Reset refs
     countedWordsRef.current.clear();
-    setIsPausedAtTranquility(false);
-    pauseStartTimeRef.current = null;
-    hasPausedAtTranquilityRef.current = false;
     lastIndexRef.current = -1;
   };
 
+  /**
+   * Starts the animation synchronized with the YouTube video.
+   * Seeks to the preamble start time and begins playback.
+   */
   const handleStartWithVideo = () => {
     if (!playerRef.current || !ready) return;
-    if (typeof playerRef.current.seekTo !== "function" || typeof playerRef.current.playVideo !== "function") {
+    if (
+      typeof playerRef.current.seekTo !== "function" ||
+      typeof playerRef.current.playVideo !== "function"
+    ) {
       console.warn("YouTube player methods not available");
       return;
     }
@@ -291,7 +393,7 @@ export default function PreambleAnalyzer() {
     setIsManualMode(false);
 
     try {
-      playerRef.current.seekTo(61, true);
+      playerRef.current.seekTo(START_OFFSET_SECONDS, true);
       playerRef.current.playVideo();
       setLoopRunning(true);
     } catch (error) {
@@ -299,11 +401,16 @@ export default function PreambleAnalyzer() {
     }
   };
 
+  /**
+   * Starts the manual animation mode (no video sync).
+   * Pauses the video if it's playing and begins word-by-word animation.
+   */
   const handleStartManual = () => {
     resetAll();
     setLoopRunning(false);
     setIsManualMode(true);
 
+    // Pause video if playing
     if (playerRef.current && typeof playerRef.current.pauseVideo === "function") {
       try {
         playerRef.current.pauseVideo();
@@ -313,6 +420,7 @@ export default function PreambleAnalyzer() {
     }
   };
 
+  // Determine which index to use for highlighting based on current mode
   const activeIndex = isManualMode ? manualIndex : currentIndex;
 
   return (
@@ -321,39 +429,42 @@ export default function PreambleAnalyzer() {
 
         {/* Title */}
         <header className="text-center space-y-4">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide text-rose-300">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-wide mb-8" style={{ color: '#2563eb' }}>
             Preamble Analyzer
           </h1>
 
-          <div className="flex items-center justify-center gap-4">
-            <img
-              src="/abraham-lincoln.png"
-              alt="Lincoln"
-              className="h-20 w-20 md:h-28 md:w-28 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
-            />
-            <img
-              src="/capitol.png"
-              alt="Capitol"
-              className="h-20 w-20 md:h-28 md:w-28 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
-            />
-          </div>
+          <div className="flex items-center justify-center gap-12">
+            {/* First icon-button pair */}
+            <div className="flex flex-col items-center gap-3">
+              <img
+                src="/abraham-lincoln.png"
+                alt="Lincoln"
+                className="h-20 w-20 md:h-28 md:w-28 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+              />
+              <button
+                onClick={handleStartWithVideo}
+                disabled={!ready || loopRunning}
+                className="rounded-full bg-blue-600 px-6 py-2.5 text-sm md:text-base font-semibold shadow-lg shadow-blue-500/40 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition"
+              >
+                {!ready ? "Loading YouTube Player..." : loopRunning ? "Playing…" : "Play Song & Sync"}
+              </button>
+            </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={handleStartWithVideo}
-              disabled={!ready || loopRunning}
-              className="rounded-full bg-blue-600 px-6 py-2.5 text-sm md:text-base font-semibold shadow-lg shadow-blue-500/40 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition"
-            >
-              {!ready ? "Loading YouTube Player..." : loopRunning ? "Playing…" : "Play Song & Sync"}
-            </button>
-
-            <button
-              onClick={handleStartManual}
-              disabled={loopRunning || isManualMode}
-              className="rounded-full border border-slate-600 bg-slate-800 px-6 py-2.5 text-sm md:text-base font-semibold hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
-            >
-              {isManualMode ? "Animating…" : "Run Animation Only"}
-            </button>
+            {/* Second icon-button pair */}
+            <div className="flex flex-col items-center gap-3">
+              <img
+                src="/capitol.png"
+                alt="Capitol"
+                className="h-20 w-20 md:h-28 md:w-28 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+              />
+              <button
+                onClick={handleStartManual}
+                disabled={loopRunning || isManualMode}
+                className="rounded-full border border-slate-600 bg-slate-800 px-6 py-2.5 text-sm md:text-base font-semibold hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+              >
+                {isManualMode ? "Animating…" : "Run Animation Only"}
+              </button>
+            </div>
           </div>
         </header>
 
@@ -361,23 +472,28 @@ export default function PreambleAnalyzer() {
         <div style={{ 
           background: 'rgba(248, 250, 252, 0.95)', 
           color: '#1e293b',
-          padding: '2.5rem',
+          padding: '4rem 3rem',
+          minHeight: '400px',
           borderRadius: '1.5rem',
           boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
-          marginBottom: '2rem'
+          marginBottom: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}>
           <p style={{ 
-            lineHeight: '2',
-            fontSize: '1.1rem',
-            textAlign: 'center'
+            lineHeight: '2.2',
+            fontSize: '2rem',
+            textAlign: 'center',
+            width: '100%'
           }}>
             {words.map((word, i) => {
               const hasBeenPassed = i < activeIndex;
-              const clean = word.toLowerCase().replace(/[.,]/g, "");
-
-              const startsT = clean.startsWith("t");
-              const endsE = clean.endsWith("e");
-              const both = startsT && endsE;
+              const clean = normalizeWord(word);
+              const counts = computeCounts(clean);
+              const startsT = counts.startsT;
+              const endsE = counts.endsE;
+              const both = counts.both;
 
               let colorStyle = {};
               let bgStyle = {};
@@ -415,21 +531,22 @@ export default function PreambleAnalyzer() {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '1.5rem',
-          marginBottom: '2rem'
+          marginBottom: '4rem'
         }}>
           <StatCard label='Starts with "t"' value={startsWithTCount} accent="green" />
           <StatCard label='Ends with "e"' value={endsWithECount} accent="red" />
           <StatCard label='Starts with "t" & ends with "e"' value={doesBothCount} accent="blue" />
         </div>
 
-        {/* Video */}
+        {/* Video - Below everything, requires scroll */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           flexDirection: 'column',
           gap: '0.75rem',
-          marginBottom: '2rem'
+          marginBottom: '2rem',
+          marginTop: '4rem'
         }}>
           <div style={{
             width: '100%',
@@ -467,12 +584,21 @@ export default function PreambleAnalyzer() {
   );
 }
 
-// StatCard component (kept close to what you had)
+// ------------------------------------------------------------
+// StatCard Component
+// ------------------------------------------------------------
+/**
+ * Displays a statistic card with a label, value, and accent color.
+ * 
+ * @param {string} label - The label text to display
+ * @param {number} value - The numeric value to display
+ * @param {string} accent - Color accent: "green", "red", or "blue"
+ */
 function StatCard({ label, value, accent }) {
   const colorClasses = {
     green: { from: "#16a34a", to: "#22c55e" },
     red: { from: "#bf0a30", to: "#e63946" },
-    blue: { from: "#002868", to: "#1a4480" },
+    blue: { from: "#2563eb", to: "#3b82f6" },
   };
 
   const colors = colorClasses[accent] || colorClasses.green;
