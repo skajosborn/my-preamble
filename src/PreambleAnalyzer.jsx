@@ -321,12 +321,12 @@ export default function PreambleAnalyzer() {
             <img
               src="/abraham-lincoln.png"
               alt="Lincoln"
-              className="h-12 w-12 md:h-16 md:w-16 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+              className="h-20 w-20 md:h-28 md:w-28 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
             />
             <img
               src="/capitol.png"
               alt="Capitol"
-              className="h-12 w-12 md:h-16 md:w-16 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+              className="h-20 w-20 md:h-28 md:w-28 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
             />
           </div>
 
@@ -426,14 +426,25 @@ export default function PreambleAnalyzer() {
           <div style={{
             width: '100%',
             maxWidth: '600px',
-            aspectRatio: '16/9',
+            height: '0',
+            paddingBottom: '56.25%',
+            position: 'relative',
             borderRadius: '1.25rem',
             overflow: 'hidden',
             border: '3px solid #334155',
             backgroundColor: '#000',
             boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
           }}>
-            <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+            <div 
+              ref={containerRef} 
+              style={{ 
+                position: 'absolute',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%'
+              }} 
+            />
           </div>
           <p style={{
             fontSize: '0.75rem',
