@@ -444,7 +444,7 @@ export default function PreambleAnalyzer() {
               <button
                 onClick={handleStartWithVideo}
                 disabled={!ready || loopRunning}
-                className="rounded-full bg-blue-600 px-5 py-2 text-xs md:text-sm font-semibold shadow-lg shadow-blue-500/40 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                className="rounded-full bg-blue-600 px-5 py-2 text-xs md:text-sm font-semibold shadow-lg shadow-blue-500/40 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition"
               >
                 {!ready ? "Loading YouTube Player..." : loopRunning ? "Playing…" : "Play Song & Sync"}
               </button>
@@ -460,7 +460,7 @@ export default function PreambleAnalyzer() {
               <button
                 onClick={handleStartManual}
                 disabled={loopRunning || isManualMode}
-                className="rounded-full border border-slate-600 bg-slate-800 px-5 py-2 text-xs md:text-sm font-semibold hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                className="rounded-full border border-slate-600 bg-slate-800 px-5 py-2 text-xs md:text-sm font-semibold hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer transition"
               >
                 {isManualMode ? "Animating…" : "Run Animation Only"}
               </button>
