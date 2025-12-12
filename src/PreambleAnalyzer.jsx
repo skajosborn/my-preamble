@@ -33,7 +33,7 @@ const PREAMBLE =
  */
 const VIDEO_ID = "8_NzZvdsbWI";
 const START_OFFSET_SECONDS = 61.0; // Start time of the Preamble in the video (seconds)
-const PREAMBLE_END_SECONDS = 99.6; // End time of the Preamble in the video (seconds)
+const PREAMBLE_END_SECONDS = 99.8; // End time of the Preamble in the video (seconds)
 
 /** Regular expression to remove punctuation from words */
 const PUNCTUATION_REGEX = /[.,]/g;
@@ -425,42 +425,42 @@ export default function PreambleAnalyzer() {
 
   return (
     <div className="min-h-screen bg-[#111217] text-slate-100 flex items-center justify-center px-4 py-10">
-      <main className="w-full max-w-6xl rounded-3xl bg-gradient-to-b from-[#181921] to-[#101117] shadow-2xl border border-white/5 p-6 md:p-10 space-y-8">
+      <main className="w-full max-w-4xl rounded-3xl bg-gradient-to-b from-[#181921] to-[#101117] shadow-2xl border border-white/5 p-6 md:p-10 space-y-8">
 
         {/* Title */}
         <header className="text-center space-y-4">
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-wide mb-8" style={{ color: '#2563eb' }}>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide mb-6" style={{ color: '#2563eb' }}>
             Preamble Analyzer
           </h1>
 
-          <div className="flex items-center justify-center gap-12">
+          <div className="flex items-center justify-center gap-8">
             {/* First icon-button pair */}
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-2">
               <img
                 src="/abraham-lincoln.png"
                 alt="Lincoln"
-                className="h-20 w-20 md:h-28 md:w-28 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+                className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
               />
               <button
                 onClick={handleStartWithVideo}
                 disabled={!ready || loopRunning}
-                className="rounded-full bg-blue-600 px-6 py-2.5 text-sm md:text-base font-semibold shadow-lg shadow-blue-500/40 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                className="rounded-full bg-blue-600 px-5 py-2 text-xs md:text-sm font-semibold shadow-lg shadow-blue-500/40 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition"
               >
                 {!ready ? "Loading YouTube Player..." : loopRunning ? "Playing…" : "Play Song & Sync"}
               </button>
             </div>
 
             {/* Second icon-button pair */}
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-2">
               <img
                 src="/capitol.png"
                 alt="Capitol"
-                className="h-20 w-20 md:h-28 md:w-28 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+                className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
               />
               <button
                 onClick={handleStartManual}
                 disabled={loopRunning || isManualMode}
-                className="rounded-full border border-slate-600 bg-slate-800 px-6 py-2.5 text-sm md:text-base font-semibold hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                className="rounded-full border border-slate-600 bg-slate-800 px-5 py-2 text-xs md:text-sm font-semibold hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
               >
                 {isManualMode ? "Animating…" : "Run Animation Only"}
               </button>
@@ -472,8 +472,8 @@ export default function PreambleAnalyzer() {
         <div style={{ 
           background: 'rgba(248, 250, 252, 0.95)', 
           color: '#1e293b',
-          padding: '4rem 3rem',
-          minHeight: '400px',
+          padding: '2rem 1.5rem',
+          minHeight: '250px',
           borderRadius: '1.5rem',
           boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
           marginBottom: '2rem',
@@ -482,8 +482,8 @@ export default function PreambleAnalyzer() {
           justifyContent: 'center'
         }}>
           <p style={{ 
-            lineHeight: '2.2',
-            fontSize: '2rem',
+            lineHeight: '1.8',
+            fontSize: '1.25rem',
             textAlign: 'center',
             width: '100%'
           }}>
@@ -529,9 +529,9 @@ export default function PreambleAnalyzer() {
         {/* Stats Row */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1.5rem',
-          marginBottom: '4rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '1rem',
+          marginBottom: '2rem'
         }}>
           <StatCard label='Starts with "t"' value={startsWithTCount} accent="green" />
           <StatCard label='Ends with "e"' value={endsWithECount} accent="red" />
@@ -611,9 +611,9 @@ function StatCard({ label, value, accent }) {
         boxShadow: `0 20px 40px rgba(0,0,0,0.3), 0 0 30px ${colors.from}40`,
       }}
     >
-      <div className="px-5 py-4 relative z-10 w-full">
+      <div className="px-4 py-3 relative z-10 w-full">
         <p
-          className="text-xs md:text-sm font-bold uppercase tracking-wider text-white mb-2 opacity-95"
+          className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-white mb-1.5 opacity-95"
           style={{ textShadow: "0 2px 4px rgba(0,0,0,0.3)" }}
         >
           {label}
@@ -622,7 +622,7 @@ function StatCard({ label, value, accent }) {
         <div className="flex items-baseline justify-between w-full">
           <span
             key={value}
-            className="text-4xl md:text-5xl font-black text-white leading-none"
+            className="text-2xl md:text-3xl font-black text-white leading-none"
             style={{
               textShadow: "0 4px 8px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.25)",
             }}
@@ -631,7 +631,7 @@ function StatCard({ label, value, accent }) {
           </span>
 
           <span
-            className="text-[11px] md:text-xs text-white opacity-90 ml-3 font-bold uppercase tracking-wide"
+            className="text-[9px] md:text-[10px] text-white opacity-90 ml-2 font-bold uppercase tracking-wide"
             style={{ textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}
           >
             words
