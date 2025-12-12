@@ -4,7 +4,7 @@ import './App.css';
 function App() {
   return (
         <PreambleAnalyzer />
-  )
+     );
 }
 
 export default App;

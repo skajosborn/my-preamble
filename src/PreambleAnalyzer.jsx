@@ -424,7 +424,7 @@ export default function PreambleAnalyzer() {
   const activeIndex = isManualMode ? manualIndex : currentIndex;
 
   return (
-    <div className="min-h-screen bg-[#111217] text-slate-100 flex items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-[#111217] text-slate-100 flex flex-col items-center justify-center px-4 py-10">
       <main className="w-full max-w-4xl rounded-3xl bg-gradient-to-b from-[#181921] to-[#101117] shadow-2xl border border-white/5 p-6 md:p-10 space-y-8">
 
         {/* Title */}
@@ -580,6 +580,65 @@ export default function PreambleAnalyzer() {
           </p>
         </div>
       </main>
+
+      {/* My Code Section - Separate Container */}
+      {/* This section has the original code to solve the coding task. */}
+      <div style={{
+        width: '100%',
+        maxWidth: '64rem',
+        marginTop: '2rem',
+        padding: '2rem',
+        borderRadius: '1.5rem',
+        background: 'rgba(24, 25, 33, 0.8)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            marginBottom: '0.5rem'
+          }}>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: '#2563eb',
+              marginBottom: '0.5rem'
+            }}>
+              My Code
+            </h2>
+            <p style={{
+              fontSize: '0.875rem',
+              color: '#94a3b8',
+              padding: '0 1rem'
+            }}>
+              Below you will find the original code to solve the coding task.
+            </p>
+          </div>
+          <img
+            src="/code1.png"
+            alt="Code 1"
+            style={{
+              maxWidth: '100%',
+              height: 'auto',
+              borderRadius: '0.5rem'
+            }}
+          />
+          <img
+            src="/code2.png"
+            alt="Code 2"
+            style={{
+              maxWidth: '100%',
+              height: 'auto',
+              borderRadius: '0.5rem'
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
