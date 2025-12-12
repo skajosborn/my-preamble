@@ -32,8 +32,8 @@ const PREAMBLE =
  * Adjust these constants if video timing synchronization is off.
  */
 const VIDEO_ID = "8_NzZvdsbWI";
-const START_OFFSET_SECONDS = 61.0; // Start time of the Preamble in the video (seconds)
-const PREAMBLE_END_SECONDS = 99.8; // End time of the Preamble in the video (seconds)
+const START_OFFSET_SECONDS = 130.0; // Start time of the Preamble in the video (2:10 in seconds)
+const PREAMBLE_END_SECONDS = 170.0; // End time of the Preamble in the video (2:49 in seconds)
 
 /** Regular expression to remove punctuation from words */
 const PUNCTUATION_REGEX = /[.,]/g;
